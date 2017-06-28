@@ -6,6 +6,6 @@ ls
 
 cd /home/ec2-user/
 
-./startup restart
+./startup.sh restart
 
 echo 'Restarted'
