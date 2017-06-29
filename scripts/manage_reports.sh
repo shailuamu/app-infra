@@ -1,11 +1,15 @@
 FILE_NAME=$1
 SOURCE_PATH=$2
 DESTINATION=$3
-BUILD_COUNTER=$4
+BUILD_COUNTER_VAR=$4
 HOST_ADD=$5
 
 echo 'Starting copying Reports'
 echo $HOST_ADD
+
+eval BUILD_COUNTER='$'$BUILD_COUNTER_VAR
+
+echo $BUILD_COUNTER
 
 scp -o StrictHostKeyChecking=no -r $SOURCE_PATH ec2-user@$HOST_ADD:
 

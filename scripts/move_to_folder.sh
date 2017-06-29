@@ -10,11 +10,9 @@ echo $DESTINATION
 
 echo $BUILD_COUNTER
 
-sudo su
-
 echo "Copy to exact folder"
 
-destination_path="$DESTINATION/$BUILD_COUNTER"
+destination_path=$DESTINATION/$BUILD_COUNTER
 
 echo "DESTINATION Folder - "
 
@@ -28,6 +26,6 @@ ls $destination_path
 
 echo "Moving report"
 
-sudo mv FILE_NAME $destination_path
+sudo mv $FILE_NAME/* $destination_path
 
 echo "DONE"
