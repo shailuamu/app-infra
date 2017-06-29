@@ -1,6 +1,6 @@
 echo 'Restarting Application'
 
-tar -zvf webapp.tar.gz
+tar zxvf webapp.tar.gz
 
 ls
 
