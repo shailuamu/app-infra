@@ -14,7 +14,7 @@ sudo su
 
 echo "Copy to exact folder"
 
-destination_path="$DESTINATION/$BUILD_COUNTER"
+destination_path=$DESTINATION/$BUILD_COUNTER
 
 echo "DESTINATION Folder - "
 
