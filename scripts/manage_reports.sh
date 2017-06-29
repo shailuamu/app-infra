@@ -7,6 +7,6 @@ HOST_ADD=$5
 echo 'Starting copying Reports'
 echo $HOST_ADD
 
-scp -o StrictHostKeyChecking=no $SOURCE_PATH ec2-user@$HOST_ADD:
+scp -o StrictHostKeyChecking=no -r $SOURCE_PATH ec2-user@$HOST_ADD:
 
 ssh -o StrictHostKeyChecking=no ec2-user@$HOST_ADD 'bash -s' < move_to_folder.sh $FILE_NAME $DESTINATION $BUILD_COUNTER
