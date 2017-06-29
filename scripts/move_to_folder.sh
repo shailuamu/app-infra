@@ -2,11 +2,21 @@ FILE_NAME=$1
 DESTINATION=$2
 BUILD_COUNTER=$3
 
-sudo sudo
+echo "Parameters"
+
+echo $FILE_NAME
+
+echo $DESTINATION
+
+echo $BUILD_COUNTER
+
+sudo su
 
 echo "Copy to exact folder"
 
-destination_path = "$DESTINATION/$BUILD_COUNTER"
+destination_path="$DESTINATION/$BUILD_COUNTER"
+
+echo "DESTINATION Folder - "
 
 echo $destination_path
 
