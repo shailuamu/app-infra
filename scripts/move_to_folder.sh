@@ -26,6 +26,6 @@ ls $destination_path
 
 echo "Moving report"
 
-sudo mv FILE_NAME $destination_path
+sudo mv $FILE_NAME/* $destination_path
 
 echo "DONE"
