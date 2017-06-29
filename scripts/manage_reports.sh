@@ -2,6 +2,7 @@ FILE_NAME=$1
 SOURCE_PATH=$2
 DESTINATION=$3
 BUILD_COUNTER=$4
+HOST_ADD=$5
 
 echo 'Starting copying Reports'
 echo $HOST_ADD
