@@ -4,6 +4,6 @@ tar -zvf webapp.tar.gz
 
 ls
 
-pm2 script reload
+pm2 reload script
 
 echo 'Restarted'
