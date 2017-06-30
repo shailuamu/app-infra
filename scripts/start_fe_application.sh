@@ -1,7 +1,7 @@
 echo 'Restarting Application'
 
+tar zxvf webapp.tar.gz
 
 
-pm2 list 
 
 echo 'Restarted'
