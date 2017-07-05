@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="82">
+  <server artifactsdir="artifacts" commandRepositoryLocation="default" serverId="929225d5-79a7-4fdc-855c-8dfd181a09e0" />
+  <pipelines group="BackendApplication">
+    <pipeline name="BuildBackendApplication">
+      <materials>
+        <git url="https://github.com/shailuamu/drdolittle-petclinic.git" dest="web" materialName="webBackend" />
+        <git url="https://github.com/shailuamu/app-infra.git" dest="app-infra" materialName="scripts" />
+      </materials>
+      <stage name="CreateJar">
+        <jobs>
+          <job name="MavenGenerateJar">
+            <tasks>
+              <exec command="mvn" workingdir="web/service">
+                <arg>clean</arg>
+                <arg>install</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="mvn" workingdir="web/service">
+                <arg>package</arg>
+                <arg>spring-boot:repackage</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+            <artifacts>
+              <artifact src="web/service/target/ROOT.jar" dest="build" />
+            </artifacts>
+          </job>
+          <job name="ReportGeneration">
+            <tasks>
+              <exec command="mvn" workingdir="web/service">
+                <arg>clean</arg>
+                <arg>jacoco:prepare-agent</arg>
+                <arg>install</arg>
+                <arg>jacoco:report</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/sh" workingdir="app-infra/scripts">
+                <arg>manage_reports.sh</arg>
+                <arg>jacoco</arg>
+                <arg>/var/lib/go-agent/pipelines/BuildBackendApplication/web/service/target/site/jacoco</arg>
+                <arg>/home/ec2-user/projects/reports-viewer/static/reports/junit</arg>
+                <arg>GO_PIPELINE_COUNTER</arg>
+                <arg>13.229.31.126</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="DeployBackendApplication">
+      <materials>
+        <git url="https://github.com/shailuamu/app-infra.git" />
+        <pipeline pipelineName="BuildBackendApplication" stageName="CreateJar" materialName="JarArtifact" />
+      </materials>
+      <stage name="FetchArtifact" fetchMaterials="false">
+        <jobs>
+          <job name="moveArtifact">
+            <tasks>
+              <fetchartifact pipeline="BuildBackendApplication" stage="CreateJar" job="MavenGenerateJar" srcfile="build/ROOT.jar" dest="application">
+                <runif status="passed" />
+              </fetchartifact>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="DeployToTestServer">
+        <approval type="manual" />
+        <jobs>
+          <job name="manageApplication">
+            <tasks>
+              <fetchartifact pipeline="BuildBackendApplication" stage="CreateJar" job="MavenGenerateJar" srcfile="build/ROOT.jar" dest="application">
+                <runif status="passed" />
+              </fetchartifact>
+              <exec command="scp" workingdir="application">
+                <arg>-o</arg>
+                <arg>StrictHostKeyChecking=no</arg>
+                <arg>ROOT.jar</arg>
+                <arg>ec2-user@13.229.31.126:</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/sh" workingdir="scripts">
+                <arg>manage_application.sh</arg>
+                <arg>13.229.31.126</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="TestBackendApplication">
+      <materials>
+        <git url="https://github.com/shailuamu/API.git" dest="API" />
+        <pipeline pipelineName="DeployBackendApplication" stageName="DeployToTestServer" materialName="BackendCodeDeploy" />
+        <git url="https://github.com/shailuamu/app-infra.git" dest="app-infra" materialName="Scripts" />
+      </materials>
+      <stage name="RunJmeterTestsuite">
+        <jobs>
+          <job name="RunJmeterAndExportReport">
+            <tasks>
+              <exec command="/bin/sh" workingdir="API">
+                <arg>run_jmeter.sh</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/sh" workingdir="app-infra/scripts">
+                <arg>manage_reports.sh</arg>
+                <arg>Rest_Framework_Report</arg>
+                <arg>/var/lib/go-agent/pipelines/TestBackendApplication/API/Rest_Framework_Report</arg>
+                <arg>/home/ec2-user/projects/reports-viewer/static/reports/api</arg>
+                <arg>GO_PIPELINE_COUNTER</arg>
+                <arg>13.229.31.126</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </pipelines>
+  <pipelines group="FrontendApplication">
+    <pipeline name="BuildFronentApplication">
+      <materials>
+        <git url="https://github.com/hemant24/drdolittle-petclinic-fe.git" />
+      </materials>
+      <stage name="CreateTar">
+        <jobs>
+          <job name="NpmInstall">
+            <tasks>
+              <exec command="npm" workingdir="webapp">
+                <arg>install</arg>
+              </exec>
+              <exec command="/bin/sh">
+                <arg>-c</arg>
+                <arg>tar -zcf webapp.tar.gz webapp</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+            <artifacts>
+              <artifact src="webapp.tar.gz" dest="build" />
+            </artifacts>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="DeployFrontentApplication">
+      <materials>
+        <git url="https://github.com/shailuamu/app-infra.git" />
+        <pipeline pipelineName="BuildFronentApplication" stageName="CreateTar" materialName="upstream" />
+      </materials>
+      <stage name="FetchArtifcat">
+        <jobs>
+          <job name="moveArtifact">
+            <tasks>
+              <exec command="ls" />
+              <fetchartifact pipeline="BuildFronentApplication" stage="CreateTar" job="NpmInstall" srcfile="build/webapp.tar.gz" dest="application">
+                <runif status="passed" />
+              </fetchartifact>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="DeployToTestServer">
+        <approval type="manual" />
+        <jobs>
+          <job name="manageApplication">
+            <tasks>
+              <fetchartifact pipeline="BuildFronentApplication" stage="CreateTar" job="NpmInstall" srcfile="build/webapp.tar.gz" dest="application">
+                <runif status="passed" />
+              </fetchartifact>
+              <exec command="scp" workingdir="application">
+                <arg>-o</arg>
+                <arg>StrictHostKeyChecking=no</arg>
+                <arg>webapp.tar.gz</arg>
+                <arg>ec2-user@13.229.31.126:</arg>
+              </exec>
+              <exec command="/bin/sh" workingdir="scripts">
+                <arg>manage_fe_application.sh</arg>
+                <arg>13.229.31.126</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="TestFrontendApplication">
+      <materials>
+        <pipeline pipelineName="DeployFrontentApplication" stageName="DeployToTestServer" materialName="upstream" />
+      </materials>
+      <stage name="CallJenkinJob">
+        <approval type="manual" />
+        <jobs>
+          <job name="defaultJob">
+            <tasks>
+              <exec command="ls">
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </pipelines>
+  <agents>
+    <agent hostname="ip-172-31-24-98" ipaddress="127.0.0.1" uuid="b651d189-f0fc-434a-830c-3d6e48bf41dd" />
+  </agents>
+</cruise>
+
